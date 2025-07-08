@@ -37,7 +37,6 @@
         <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
             <h2 class="text-xl font-bold mb-4 text-indigo-700">Peta Sebaran Klaster Pendidikan</h2>
             <div id="map-container" class="w-full h-auto bg-gray-100 rounded-lg flex items-center justify-center">
-                <!-- PERBAIKAN FINAL: Ekstensi file diubah ke .png sesuai file asli Anda -->
                 <img src="peta_klaster_jateng_HD.png" alt="Peta Klaster Pendidikan Jawa Tengah" class="rounded-lg object-contain">
             </div>
             <div class="mt-4 flex flex-wrap justify-center gap-4">
@@ -76,7 +75,7 @@
 
                 <div>
                     <h4 class="font-semibold text-gray-800 mb-2 border-b pb-1">Rekomendasi Kebijakan:</h4>
-                    <p id="policy-recommendation" class="text-sm text-gray-600 bg-indigo-50 p-3 rounded-lg"></p>
+                    <div id="policy-recommendation" class="text-sm text-gray-600 bg-indigo-50 p-3 rounded-lg"></div>
                 </div>
             </div>
         </div>
@@ -122,10 +121,37 @@
         "Kota Tegal": { "TKM": 66.58, "IPLM": 71.93, "HLS": 13.74, "RLS": 9.06, "RMG": 18.68, "klaster": "Tantangan Pendidikan" }
     };
 
+    // REVISI: kebijakan tiap klaster diperbarui, gunakan innerHTML
     const clusterDetails = {
-        "Pendidikan Tinggi": { color: "#22c55e", recommendation: "Menjadi model percontohan (best practice) dan pusat inovasi pendidikan. Mendorong program kemitraan dengan wilayah di klaster lain untuk transfer pengetahuan serta penguatan kolaborasi antara institusi pendidikan dengan industri lokal." },
-        "Pendidikan Menengah": { color: "#f59e0b", recommendation: "Fokus pada program peningkatan kualitas, seperti pelatihan guru berkelanjutan, penguatan budaya literasi melalui perpustakaan daerah, dan peningkatan akses teknologi digital di sekolah untuk mendorong akselerasi menjadi klaster tinggi." },
-        "Tantangan Pendidikan": { color: "#ef4444", recommendation: "Memerlukan alokasi sumber daya prioritas untuk program peningkatan Angka Partisipasi Sekolah (APS), perbaikan infrastruktur dasar, analisis mendalam mengenai distribusi dan kompetensi guru, serta intervensi khusus untuk menekan angka rasio murid-guru." }
+        "Tantangan Pendidikan": {
+            color: "#ef4444",
+            recommendation: `
+            <ul class="list-disc ml-4 space-y-1">
+                <li><b>Prioritas:</b> Peningkatan literasi dan minat baca melalui gerakan perpustakaan sekolah, penyediaan buku bacaan bermutu, dan kampanye literasi digital.</li>
+                <li><b>Distribusi guru:</b> Insentif bagi guru untuk bertugas di wilayah ini, penugasan berbasis kebutuhan, dan redistribusi guru dari wilayah kelebihan ke wilayah kekurangan.</li>
+                <li><b>Infrastruktur:</b> Revitalisasi fasilitas sekolah dan digitalisasi pembelajaran untuk menjangkau wilayah terpencil.</li>
+                <li><b>Pengawasan & evaluasi:</b> Monitoring rutin guna mengidentifikasi wilayah yang masih tertinggal dan membutuhkan intervensi cepat.</li>
+            </ul>
+            `
+        },
+        "Pendidikan Menengah": {
+            color: "#f59e0b",
+            recommendation: `
+            <ul class="list-disc ml-4 space-y-1">
+                <li><b>Penguatan mutu:</b> Pelatihan kompetensi guru, pengembangan kurikulum adaptif, dan peningkatan partisipasi masyarakat dalam pendidikan.</li>
+                <li><b>Pemanfaatan praktik baik:</b> Studi banding ke klaster pendidikan tinggi, replikasi model pembelajaran efektif.</li>
+            </ul>
+            `
+        },
+        "Pendidikan Tinggi": {
+            color: "#22c55e",
+            recommendation: `
+            <ul class="list-disc ml-4 space-y-1">
+                <li><b>Role model:</b> Menjadi pusat inovasi pendidikan daerah, mendukung kolaborasi antarwilayah, dan sharing best practice.</li>
+                <li><b>Pemantapan digitalisasi:</b> Integrasi platform e-learning dan penguatan kapasitas digital guru-siswa untuk memperkuat keunggulan wilayah.</li>
+            </ul>
+            `
+        }
     };
 
     const features = ['TKM', 'IPLM', 'HLS', 'RLS', 'RMG'];
@@ -158,7 +184,8 @@
              </div>`
         ).join('');
 
-        document.getElementById('policy-recommendation').textContent = klasterInfo.recommendation;
+        // GUNAKAN innerHTML untuk render list rekomendasi
+        document.getElementById('policy-recommendation').innerHTML = klasterInfo.recommendation;
         
         document.getElementById('region-select').value = regionName;
         updateRadarChart(regionData);
