@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Interaktif - Pemetaan Pendidikan Jawa Tengah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e0e7ff; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4338ca; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+<div class="container mx-auto p-4 md:p-8">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-indigo-800">Dasbor Pemetaan Kualitas Pendidikan Jawa Tengah</h1>
+        <p class="text-lg text-gray-600 mt-2">Analisis Klaster untuk Kebijakan Berbasis Bukti</p>
+        <div class="mt-4 text-sm text-gray-500">
+            <span class="font-semibold">Nomor Peserta:</span> EIC-2501021 | 
+            <span class="font-semibold">Nama Tim:</span> koasdata
+        </div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+        <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+            <h2 class="text-xl font-bold mb-4 text-indigo-700">Peta Sebaran Klaster Pendidikan</h2>
+            <div id="map-container" class="w-full h-auto bg-gray-100 rounded-lg flex items-center justify-center">
+                <!-- PERBAIKAN FINAL: Ekstensi file diubah ke .png sesuai file asli Anda -->
+                <img src="peta_klaster_jateng_HD.png" alt="Peta Klaster Pendidikan Jawa Tengah" class="rounded-lg object-contain">
+            </div>
+            <div class="mt-4 flex flex-wrap justify-center gap-4">
+                <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-[#ef4444] mr-2"></div><span class="font-medium">Tantangan Pendidikan</span></div>
+                <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-[#f59e0b] mr-2"></div><span class="font-medium">Pendidikan Menengah</span></div>
+                <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-[#22c55e] mr-2"></div><span class="font-medium">Pendidikan Tinggi</span></div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+            <h2 class="text-xl font-bold mb-4 text-indigo-700">Detail Wilayah</h2>
+
+            <div class="mb-6">
+                <label for="region-select" class="block text-sm font-medium text-gray-700 mb-1">Pilih Kabupaten/Kota:</label>
+                <select id="region-select" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </select>
+            </div>
+
+            <div id="info-panel" class="space-y-6">
+                <div>
+                    <h3 id="region-name" class="text-2xl font-bold text-gray-900">Nama Wilayah</h3>
+                    <p id="cluster-info" class="text-lg font-semibold">Informasi Klaster</p>
+                </div>
+
+                <div id="radar-chart" class="w-full h-64 md:h-80"></div>
+                
+                <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    <h4 class="font-bold mb-1">Cara Membaca Grafik Radar:</h4>
+                    <p>Grafik ini menunjukkan profil pendidikan suatu wilayah. Jari-jari (nilai r) menunjukkan skor ternormalisasi dari 0 (terendah di Jateng) hingga 1 (tertinggi di Jateng). Semakin luas area yang terbentuk, semakin baik profil pendidikannya. Untuk RMG, nilai yang lebih rendah lebih baik, sehingga skalanya dibalik pada grafik ini.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2 border-b pb-1">Data Indikator:</h4>
+                    <div id="indicator-data" class="grid grid-cols-1 gap-2 text-sm"></div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-800 mb-2 border-b pb-1">Rekomendasi Kebijakan:</h4>
+                    <p id="policy-recommendation" class="text-sm text-gray-600 bg-indigo-50 p-3 rounded-lg"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const analysisData = {
+        "Kab. Cilacap": { "TKM": 68.99, "IPLM": 64.41, "HLS": 12.9, "RLS": 7.44, "RMG": 18.05, "klaster": "Tantangan Pendidikan" },
+        "Kab. Banyumas": { "TKM": 67.39, "IPLM": 67.88, "HLS": 13.34, "RLS": 7.93, "RMG": 21.05, "klaster": "Tantangan Pendidikan" },
+        "Kab. Purbalingga": { "TKM": 63.98, "IPLM": 70.33, "HLS": 12.13, "RLS": 7.36, "RMG": 20.18, "klaster": "Tantangan Pendidikan" },
+        "Kab. Banjarnegara": { "TKM": 63.85, "IPLM": 73.11, "HLS": 11.92, "RLS": 6.91, "RMG": 20.05, "klaster": "Tantangan Pendidikan" },
+        "Kab. Kebumen": { "TKM": 80.77, "IPLM": 78.81, "HLS": 13.49, "RLS": 7.84, "RMG": 16.94, "klaster": "Pendidikan Menengah" },
+        "Kab. Purworejo": { "TKM": 65.98, "IPLM": 70.03, "HLS": 12.83, "RLS": 7.56, "RMG": 19.18, "klaster": "Tantangan Pendidikan" },
+        "Kab. Wonosobo": { "TKM": 81.34, "IPLM": 69.81, "HLS": 12.49, "RLS": 7.04, "RMG": 16.94, "klaster": "Pendidikan Menengah" },
+        "Kab. Magelang": { "TKM": 83.11, "IPLM": 68.33, "HLS": 12.93, "RLS": 7.56, "RMG": 16.78, "klaster": "Pendidikan Menengah" },
+        "Kab. Boyolali": { "TKM": 66.39, "IPLM": 67.08, "HLS": 12.74, "RLS": 7.33, "RMG": 19.85, "klaster": "Tantangan Pendidikan" },
+        "Kab. Klaten": { "TKM": 83.18, "IPLM": 68.13, "HLS": 13.14, "RLS": 7.76, "RMG": 16.55, "klaster": "Pendidikan Menengah" },
+        "Kab. Sukoharjo": { "TKM": 75.39, "IPLM": 89.88, "HLS": 13.54, "RLS": 9.13, "RMG": 16.95, "klaster": "Pendidikan Tinggi" },
+        "Kab. Wonogiri": { "TKM": 80.11, "IPLM": 65.81, "HLS": 12.29, "RLS": 6.84, "RMG": 17.94, "klaster": "Pendidikan Menengah" },
+        "Kab. Karanganyar": { "TKM": 67.58, "IPLM": 68.93, "HLS": 13.04, "RLS": 7.66, "RMG": 19.68, "klaster": "Tantangan Pendidikan" },
+        "Kab. Sragen": { "TKM": 65.08, "IPLM": 66.13, "HLS": 12.44, "RLS": 7.16, "RMG": 20.55, "klaster": "Tantangan Pendidikan" },
+        "Kab. Grobogan": { "TKM": 78.98, "IPLM": 63.33, "HLS": 11.83, "RLS": 6.56, "RMG": 18.18, "klaster": "Pendidikan Menengah" },
+        "Kab. Blora": { "TKM": 63.11, "IPLM": 62.81, "HLS": 11.82, "RLS": 6.42, "RMG": 18.94, "klaster": "Tantangan Pendidikan" },
+        "Kab. Rembang": { "TKM": 88.43, "IPLM": 63.93, "HLS": 12.14, "RLS": 6.86, "RMG": 17.68, "klaster": "Pendidikan Menengah" },
+        "Kab. Pati": { "TKM": 81.08, "IPLM": 67.13, "HLS": 12.64, "RLS": 7.26, "RMG": 17.25, "klaster": "Pendidikan Menengah" },
+        "Kab. Kudus": { "TKM": 84.39, "IPLM": 71.88, "HLS": 13.74, "RLS": 8.33, "RMG": 15.05, "klaster": "Pendidikan Menengah" },
+        "Kab. Jepara": { "TKM": 82.77, "IPLM": 67.81, "HLS": 12.89, "RLS": 7.44, "RMG": 16.94, "klaster": "Pendidikan Menengah" },
+        "Kab. Demak": { "TKM": 64.98, "IPLM": 66.03, "HLS": 12.33, "RLS": 6.96, "RMG": 20.88, "klaster": "Tantangan Pendidikan" },
+        "Kab. Semarang": { "TKM": 68.77, "IPLM": 70.81, "HLS": 13.49, "RLS": 8.04, "RMG": 18.94, "klaster": "Tantangan Pendidikan" },
+        "Kab. Temanggung": { "TKM": 67.38, "IPLM": 68.53, "HLS": 12.94, "RLS": 7.56, "RMG": 19.75, "klaster": "Tantangan Pendidikan" },
+        "Kab. Kendal": { "TKM": 82.98, "IPLM": 68.03, "HLS": 12.83, "RLS": 7.46, "RMG": 17.18, "klaster": "Pendidikan Menengah" },
+        "Kab. Batang": { "TKM": 80.77, "IPLM": 64.81, "HLS": 12.19, "RLS": 6.74, "RMG": 18.04, "klaster": "Pendidikan Menengah" },
+        "Kab. Pekalongan": { "TKM": 81.58, "IPLM": 66.93, "HLS": 12.54, "RLS": 7.16, "RMG": 17.68, "klaster": "Pendidikan Menengah" },
+        "Kab. Pemalang": { "TKM": 62.77, "IPLM": 63.81, "HLS": 11.69, "RLS": 6.44, "RMG": 21.54, "klaster": "Tantangan Pendidikan" },
+        "Kab. Tegal": { "TKM": 63.58, "IPLM": 64.93, "HLS": 11.94, "RLS": 6.66, "RMG": 21.28, "klaster": "Tantangan Pendidikan" },
+        "Kab. Brebes": { "TKM": 75.58, "IPLM": 62.93, "HLS": 12.34, "RLS": 6.86, "RMG": 19.28, "klaster": "Pendidikan Menengah" },
+        "Kota Magelang": { "TKM": 78.77, "IPLM": 100.0, "HLS": 14.49, "RLS": 10.84, "RMG": 14.96, "klaster": "Pendidikan Tinggi" },
+        "Kota Surakarta": { "TKM": 77.98, "IPLM": 99.85, "HLS": 15.04, "RLS": 11.36, "RMG": 15.18, "klaster": "Pendidikan Tinggi" },
+        "Kota Salatiga": { "TKM": 78.77, "IPLM": 100.0, "HLS": 15.49, "RLS": 11.55, "RMG": 15.94, "klaster": "Pendidikan Tinggi" },
+        "Kota Semarang": { "TKM": 76.98, "IPLM": 92.33, "HLS": 15.67, "RLS": 11.16, "RMG": 16.18, "klaster": "Pendidikan Tinggi" },
+        "Kota Pekalongan": { "TKM": 81.77, "IPLM": 79.81, "HLS": 14.29, "RLS": 8.64, "RMG": 16.54, "klaster": "Pendidikan Menengah" },
+        "Kota Tegal": { "TKM": 66.58, "IPLM": 71.93, "HLS": 13.74, "RLS": 9.06, "RMG": 18.68, "klaster": "Tantangan Pendidikan" }
+    };
+
+    const clusterDetails = {
+        "Pendidikan Tinggi": { color: "#22c55e", recommendation: "Menjadi model percontohan (best practice) dan pusat inovasi pendidikan. Mendorong program kemitraan dengan wilayah di klaster lain untuk transfer pengetahuan serta penguatan kolaborasi antara institusi pendidikan dengan industri lokal." },
+        "Pendidikan Menengah": { color: "#f59e0b", recommendation: "Fokus pada program peningkatan kualitas, seperti pelatihan guru berkelanjutan, penguatan budaya literasi melalui perpustakaan daerah, dan peningkatan akses teknologi digital di sekolah untuk mendorong akselerasi menjadi klaster tinggi." },
+        "Tantangan Pendidikan": { color: "#ef4444", recommendation: "Memerlukan alokasi sumber daya prioritas untuk program peningkatan Angka Partisipasi Sekolah (APS), perbaikan infrastruktur dasar, analisis mendalam mengenai distribusi dan kompetensi guru, serta intervensi khusus untuk menekan angka rasio murid-guru." }
+    };
+
+    const features = ['TKM', 'IPLM', 'HLS', 'RLS', 'RMG'];
+    const featureNames = {
+        'TKM': 'Tingkat Kegemaran Membaca: Frekuensi aktivitas membaca sebagai indikator minat baca.',
+        'IPLM': 'Indeks Pembangunan Literasi Masyarakat: Ukuran pemerataan pembangunan literasi di daerah.',
+        'HLS': 'Harapan Lama Sekolah: Ekspektasi lama pendidikan formal bagi anak usia 7 tahun ke atas (tahun).',
+        'RLS': 'Rata-Rata Lama Sekolah: Rata-rata tahun pendidikan formal penduduk usia 25+ (tahun).',
+        'RMG': 'Rasio Murid-Guru SMA: Perbandingan jumlah murid SMA per satu guru SMA.'
+    };
+
+    function updateDashboard(regionName) {
+        const regionData = analysisData[regionName];
+        if (!regionData) return;
+
+        const klasterName = regionData.klaster;
+        const klasterInfo = clusterDetails[klasterName];
+
+        document.getElementById('region-name').textContent = regionName;
+        
+        const clusterInfoEl = document.getElementById('cluster-info');
+        clusterInfoEl.textContent = `Klaster: ${klasterName}`;
+        clusterInfoEl.style.color = klasterInfo.color;
+
+        const indicatorDataEl = document.getElementById('indicator-data');
+        indicatorDataEl.innerHTML = features.map(feature => 
+            `<div class="flex justify-between border-b border-gray-100 py-2" title="${featureNames[feature]}">
+                <span class="font-medium text-gray-600">${feature}:</span>
+                <span class="font-bold text-lg">${regionData[feature]}</span>
+             </div>`
+        ).join('');
+
+        document.getElementById('policy-recommendation').textContent = klasterInfo.recommendation;
+        
+        document.getElementById('region-select').value = regionName;
+        updateRadarChart(regionData);
+    }
+
+    function updateRadarChart(regionData) {
+        let minValues = { TKM: Infinity, IPLM: Infinity, HLS: Infinity, RLS: Infinity, RMG: Infinity };
+        let maxValues = { TKM: -Infinity, IPLM: -Infinity, HLS: -Infinity, RLS: -Infinity, RMG: -Infinity };
+
+        for (const region in analysisData) {
+            for (const feature of features) {
+                if (analysisData[region][feature] < minValues[feature]) minValues[feature] = analysisData[region][feature];
+                if (analysisData[region][feature] > maxValues[feature]) maxValues[feature] = analysisData[region][feature];
+            }
+        }
+        
+        const normalizedRMG = 1 - ((regionData.RMG - minValues.RMG) / (maxValues.RMG - minValues.RMG));
+
+        const data = [{
+            type: 'scatterpolar',
+            r: [
+                (regionData.TKM - minValues.TKM) / (maxValues.TKM - minValues.TKM),
+                (regionData.IPLM - minValues.IPLM) / (maxValues.IPLM - minValues.IPLM),
+                (regionData.HLS - minValues.HLS) / (maxValues.HLS - minValues.HLS),
+                (regionData.RLS - minValues.RLS) / (maxValues.RLS - minValues.RLS),
+                normalizedRMG, 
+            ],
+            theta: features,
+            fill: 'toself',
+            name: 'Profil Wilayah',
+            marker: { color: clusterDetails[regionData.klaster].color }
+        }];
+
+        const layout = {
+            polar: {
+                radialaxis: { visible: true, range: [0, 1] }
+            },
+            showlegend: false,
+            margin: { l: 40, r: 40, t: 40, b: 40 },
+            font: { family: 'Inter, sans-serif', size: 10 }
+        };
+
+        Plotly.newPlot('radar-chart', data, layout, {responsive: true, displayModeBar: false});
+    }
+
+    function initialize() {
+        const select = document.getElementById('region-select');
+        const sortedRegions = Object.keys(analysisData).sort();
+        
+        sortedRegions.forEach(regionName => {
+            const option = document.createElement('option');
+            option.value = regionName;
+            option.textContent = regionName;
+            select.appendChild(option);
+        });
+
+        select.addEventListener('change', (e) => updateDashboard(e.target.value));
+        
+        updateDashboard(sortedRegions[0]);
+    }
+
+    window.onload = initialize;
+</script>
+
+</body>
+</html>
